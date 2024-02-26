@@ -1,4 +1,4 @@
-const questions = require('./questions.json');
+// const questions = require('./questions.json');
 const { Random } = require('random-js');
 
 const helpObject = Object.freeze({
@@ -8,7 +8,7 @@ const helpObject = Object.freeze({
     "Сетевые ОС": "os",
 });
 
-const getRandomQuestion = (topic) => {
+const getRandomQuestion = (questions,topic) => {
     const random = new Random();
 
     let questionTopic = helpObject[topic] || "случайный вопрос";
@@ -31,7 +31,7 @@ const getRandomQuestion = (topic) => {
     };
 };
 
-const getCorrectAnswer = (topic, id) => {
+const getCorrectAnswer = (questions,topic, id) => {
     const question = questions[topic].find((question) => question.id === id);
 
     if (!question.hasOptions) {

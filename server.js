@@ -1,7 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const User = require('./models/user');
-const Questions = require('./models/questions');
+const Question = require('./models/question');
 
 const app  = express();
 
@@ -58,6 +58,33 @@ app.patch("/users/:id", async (req, res) => {
         }
     } catch (error) {
         console.error('Error updating user:', error);
+        res.status(500).json({ error: 'Internal Server Error' });
+    }
+});
+
+const helpArray = ['programming','networks','circuit','os']
+app.get("/questions", async (req, res) => {
+    try {
+        const questions = await Question.find({}).lean()
+
+        if (questions.length > 0) {
+            const filteredQuestions = helpArray.reduce((result, category) => {
+                result[category] = questions
+                    .filter(question => question.hasOwnProperty(category))
+                    .reduce((acc, question) => {
+                        const { _id, ...rest } = question;
+                        acc.push(...Object.values(rest[category]));
+                        return acc;
+                    }, []);
+                return result;
+            }, {});
+
+            res.status(200).json(filteredQuestions);
+        } else {
+            res.status(404).json({ error: 'No questions found' });
+        }
+    } catch (error) {
+        console.error('Error retrieving questions:', error);
         res.status(500).json({ error: 'Internal Server Error' });
     }
 });

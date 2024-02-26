@@ -9,6 +9,7 @@ const GigaChat = require('gigachat-node').GigaChat;
 
 const { getRandomQuestion, getCorrectAnswer } = require('./utils');
 const { addUser, getUserById, updateUserById } = require('./api/user');
+const { getQuestions } = require('./api/question');
 
 require('dotenv').config();
 
@@ -28,6 +29,13 @@ client.createToken();
 const initialData = { blockMessage: false,answerId:null };
 bot.use(session({ initial: () => initialData }));
 
+async function initializeData() {
+    try {
+        initialData.questions = await getQuestions();
+    } catch (error) {
+        console.error('Error loading questions:', error);
+    }
+}
 
 bot.command('start',async (ctx) => {
     const startKeyboard = new Keyboard()
@@ -45,13 +53,18 @@ bot.command('start',async (ctx) => {
     await ctx.reply('Выбери тему вопроса в меню 🤔\nТакже я могу ответить на любой твой вопрос\nНажми кнопку "Спросить вопрос у GigaChat" и отправь свое сообщение в чат',{
         reply_markup:startKeyboard,
     });
+    await initializeData();
 });
 
 bot.hears(
     ['Сети ЭВМ', 'Схемотехника', 'Программирование', 'Сетевые ОС', 'Случайный вопрос'],
     async (ctx) => {
+        if (!initialData.questions) {
+            await initializeData();
+        }
         const topic = ctx.message.text.toLowerCase();
-        const { question, questionTopic } = getRandomQuestion(topic);
+        const { question, questionTopic } = getRandomQuestion(initialData.questions,topic);
+
 
         let inlineKeyboard;
 
@@ -108,7 +121,7 @@ bot.on('callback_query:data', async (ctx) => {
     }
 
     if (!callbackData.type.includes('option')) {
-        const answer = getCorrectAnswer(callbackData.type, callbackData.questionId);
+        const answer = getCorrectAnswer(initialData.questions,callbackData.type, callbackData.questionId);
         ctx.session.answerId = callbackData.questionId;
 
         await ctx.reply(answer, {
@@ -125,7 +138,7 @@ bot.on('callback_query:data', async (ctx) => {
         return;
     }
 
-    const answer = getCorrectAnswer(callbackData.type.split('-')[0], callbackData.questionId);
+    const answer = getCorrectAnswer(initialData.questions,callbackData.type.split('-')[0], callbackData.questionId);
 
     ctx.session.answerId = callbackData.questionId;
 
