@@ -1,7 +1,7 @@
 const axios = require('axios');
 const getQuestions = async () => {
     try {
-        const response = await axios.get("http://localhost:3000/questions");
+        const response = await axios.get(`${process.env.API_URL}/questions`);
         return response.data;
     } catch (error) {
         if (error.response && error.response.status === 404) {
